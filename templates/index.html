@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Agent - VoIP Consultant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .status-offline {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .status-online {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-speaking {
+            background: #fef3c7;
+            color: #d97706;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .controls {
+            margin: 30px 0;
+        }
+
+        .api-key-section {
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group label {
+            position: absolute;
+            top: -8px;
+            left: 15px;
+            background: white;
+            padding: 0 8px;
+            font-size: 0.85rem;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            min-width: 140px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover:before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .microphone-visual {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .mic-inactive {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+        }
+
+        .mic-listening {
+            background: linear-gradient(135deg, #10b981, #059669);
+            animation: listening 2s infinite;
+        }
+
+        .mic-speaking {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            animation: speaking 1s infinite;
+        }
+
+        @keyframes listening {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes speaking {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.05); }
+            75% { transform: scale(0.95); }
+        }
+
+        .conversation-log {
+            margin-top: 30px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .conversation-log h3 {
+            margin-bottom: 15px;
+            color: #374151;
+            font-size: 1.2rem;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .message-user {
+            background: #e0e7ff;
+            margin-left: 20px;
+        }
+
+        .message-agent {
+            background: #f0fdf4;
+            margin-right: 20px;
+        }
+
+        .message-timestamp {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+
+        .message-content {
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .features {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .feature {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .feature i {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .feature h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .feature p {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .btn {
+                margin: 5px;
+                min-width: 120px;
+            }
+
+            .microphone-visual {
+                width: 100px;
+                height: 100px;
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-microphone"></i> Voice Agent</h1>
+            <p>AI-Powered VoIP Consultant with Real-time Speech Processing</p>
+            <div id="status" class="status-indicator status-offline">
+                <i class="fas fa-circle"></i>
+                <span>Offline</span>
+            </div>
+        </div>
+
+        <div class="microphone-visual mic-inactive" id="micVisual">
+            <i class="fas fa-microphone"></i>
+        </div>
+
+        <div class="controls">
+            <div class="api-key-section">
+                <div class="input-group">
+                    <label for="groqApiKey">Groq API Key</label>
+                    <input type="password" id="groqApiKey" placeholder="Enter your Groq API key">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="startBtn" onclick="startAgent()">
+                    <i class="fas fa-play"></i> Start Agent
+                </button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopAgent()" disabled>
+                    <i class="fas fa-stop"></i> Stop Agent
+                </button>
+            </div>
+        </div>
+
+        <div id="alerts"></div>
+
+        <div class="features">
+            <div class="feature">
+                <i class="fas fa-bolt"></i>
+                <h4>Zero Latency</h4>
+                <p>Ultra-fast response times</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-brain"></i>
+                <h4>Groq LLM</h4>
+                <p>Powered by advanced AI</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-volume-up"></i>
+                <h4>Barge-in</h4>
+                <p>Interrupt detection</p>
+            </div>
+            <div class="feature">
+                <i class="fas fa-phone"></i>
+                <h4>VoIP Ready</h4>
+                <p>FreeSwitch compatible</p>
+            </div>
+        </div>
+
+        <div class="conversation-log" id="conversationLog" style="display: none;">
+            <h3><i class="fas fa-comments"></i> Conversation</h3>
+            <div id="messages"></div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let statusInterval = null;
+
+        function showAlert(message, type = 'error') {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i> ${message}`;
+            
+            alertsContainer.innerHTML = '';
+            alertsContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function updateStatus(running, speaking = false) {
+            const statusEl = document.getElementById('status');
+            const micVisual = document.getElementById('micVisual');
+            
+            if (running) {
+                if (speaking) {
+                    statusEl.className = 'status-indicator status-speaking';
+                    statusEl.innerHTML = '<i class="fas fa-volume-up"></i><span>Speaking</span>';
+                    micVisual.className = 'microphone-visual mic-speaking';
+                } else {
+                    statusEl.className = 'status-indicator status-online';
+                    statusEl.innerHTML = '<i class="fas fa-microphone"></i><span>Listening</span>';
+                    micVisual.className = 'microphone-visual mic-listening';
+                }
+            } else {
+                statusEl.className = 'status-indicator status-offline';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i><span>Offline</span>';
+                micVisual.className = 'microphone-visual mic-inactive';
+            }
+        }
+
+        function addMessage(content, isUser = false) {
+            const messagesContainer = document.getElementById('messages');
+            const conversationLog = document.getElementById('conversationLog');
+            
+            const message = document.createElement('div');
+            message.className = `message ${isUser ? 'message-user' : 'message-agent'}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            message.innerHTML = `
+                <div class="message-timestamp">${isUser ? 'You' : 'Agent'} - ${timestamp}</div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            messagesContainer.appendChild(message);
+            conversationLog.style.display = 'block';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function startAgent() {
+            const apiKey = document.getElementById('groqApiKey').value.trim();
+            
+            if (!apiKey) {
+                showAlert('Please enter your Groq API key');
+                return;
+            }
+
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            startBtn.disabled = true;
+            startBtn.innerHTML = '<div class="loading"></div> Starting...';
+
+            try {
+                const response = await fetch('/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        groq_api_key: apiKey
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    isRunning = true;
+                    updateStatus(true);
+                    showAlert('Voice agent started successfully!', 'success');
+                    
+                    startBtn.style.display = 'none';
+                    stopBtn.disabled = false;
+                    stopBtn.style.display = 'inline-block';
+                    
+                    // Start status polling
+                    startStatusPolling();
+                    
+                    addMessage('Voice agent is now active. You can start speaking!', false);
+                } else {
+                    throw new Error(data.error || 'Failed to start agent');
+                }
+            } catch (error) {
+                showAlert(`Error starting agent: ${error.message}`);
+            } finally {
+                startBtn.disabled = false;
+                startBtn.innerHTML = '<i class="fas fa-play"></i> Start Agent';
+            }
+        }
+
+        async function stopAgent() {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            stopBtn.disabled = true;
+            stopBtn.innerHTML = '<div class="loading"></div> Stopping...';
+
+            try {
+                const response = await fetch('/stop', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    isRunning = false;
+                    updateStatus(false);
+                    showAlert('Voice agent stopped successfully!', 'success');
+                    
+                    startBtn.style.display = 'inline-block';
+                    stopBtn.style.display = 'none';
+                    
+                    // Stop status polling
+                    if (statusInterval) {
+                        clearInterval(statusInterval);
+                        statusInterval = null;
+                    }
+                    
+                    addMessage('Voice agent has been stopped.', false);
+                } else {
+                    throw new Error(data.error || 'Failed to stop agent');
+                }
+            } catch (error) {
+                showAlert(`Error stopping agent: ${error.message}`);
+            } finally {
+                stopBtn.disabled = false;
+                stopBtn.innerHTML = '<i class="fas fa-stop"></i> Stop Agent';
+            }
+        }
+
+        function startStatusPolling() {
+            statusInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/status');
+                    const data = await response.json();
+                    
+                    if (data.running !== isRunning) {
+                        isRunning = data.running;
+                        updateStatus(data.running, data.speaking);
+                    } else {
+                        updateStatus(data.running, data.speaking);
+                    }
+                } catch (error) {
+                    console.error('Status polling error:', error);
+                }
+            }, 1000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus(false);
+            
+            // Load saved API key
+            const savedApiKey = localStorage.getItem('groq_api_key');
+            if (savedApiKey) {
+                document.getElementById('groqApiKey').value = savedApiKey;
+            }
+            
+            // Save API key on change
+            document.getElementById('groqApiKey').addEventListener('change', function() {
+                localStorage.setItem('groq_api_key', this.value);
+            });
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            if (isRunning) {
+                stopAgent();
+            }
+        });
+    </script>
+</body>
+</html>
+
